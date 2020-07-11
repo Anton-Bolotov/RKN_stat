@@ -150,7 +150,5 @@ if __name__ == '__main__':
     rkn.result_dict_create()
     rkn.result_dict_sort()
 
-    print(rkn.result_dict)
-
     end_time1 = time.time()
     print(f'Время затраченное на выполнение программы - ', round(end_time1 - start_time1, 2), 'секунд')
