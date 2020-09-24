@@ -1,9 +1,8 @@
 import os
+from threading import Thread
 import threading
 import time
 import requests
-from threading import Thread
-from bs4 import BeautifulSoup
 
 
 class Download_rkn_base(Thread):
@@ -16,10 +15,8 @@ class Download_rkn_base(Thread):
 
     def run(self):
         r = requests.get(url=self.url)
-        soup = BeautifulSoup(r.text, 'html.parser')
-        result = str(soup.find('pre'))
         with open(file='rkn_base.txt', mode='a', encoding='utf-8') as file:
-            file.write(result)
+            file.write(r.text)
 
 
 class Rkn_check:
@@ -42,9 +39,9 @@ class Rkn_check:
                     domain = line[1].replace('www.', '')
                     if '.' in domain:
                         if domain in self.rkn_dict.keys():
-                            self.rkn_dict[domain] += line[3] + '\t' + line[4] + '\t' + line[5]
+                            self.rkn_dict[domain] += ';' + line[3] + ';' + line[4] + ';' + line[5] + ';'
                         else:
-                            self.rkn_dict.update({domain: line[3] + '\t' + line[4] + '\t' + line[5]})
+                            self.rkn_dict.update({domain: ';' + line[3] + ';' + line[4] + ';' + line[5] + ';'})
                 except IndexError:
                     continue
 
@@ -63,30 +60,25 @@ class Rkn_check:
     def _status_check(self, domain_name, true_domain):
         """ Определение статуса вечной или временной блокировки """
         record_rkn = str(self.rkn_dict[domain_name])
-        if 'Минкомсвязь' in record_rkn:
+        if ';�����������;' in record_rkn:  # Минкомсвязь
             self.permanent_blocking.update({true_domain: 'Вечная'})
-        elif 'Генпрокуратура' in record_rkn:
+        elif ';��������������;' in record_rkn:  # Генпрокуратура
             self.permanent_blocking.update({true_domain: 'Вечная'})
-        elif 'Мосгорсуд' in record_rkn:
-            if 'решение суда по делу № 3' in record_rkn:
-                self.permanent_blocking.update({true_domain: 'Вечная'})
-            elif 'определение о предварительном обеспечении по заявлению № 2' in record_rkn:
-                self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'Роспотребнадзор' in record_rkn:
+        elif ';������� ���� �� ���� � 3' in record_rkn:  # Мосгорсуд
+            self.permanent_blocking.update({true_domain: 'Вечная'})
+        elif ';����������� � ��������������� ����������� �� ��������� � 2�' in record_rkn:  # Мосгорсуд
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'ФНС' in record_rkn:
+        elif ';���������������;' in record_rkn:  # Роспотребнадзор
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'Роскомнадзор' in record_rkn:
+        elif ';���;' in record_rkn:  # ФНС
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'МВД' in record_rkn:
+        elif ';������������;' in record_rkn:  # Роскомнадзор
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'ФСКН' in record_rkn:
+        elif ';����;' in record_rkn:  # ФСКН
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'Росалкогольрегулирование' in record_rkn:
+        elif ';������������������������;' in record_rkn:  # Росалкогольрегулирование
             self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'Росмолодежь' in record_rkn:
-            self.temporary_blocking.update({true_domain: 'Временная'})
-        elif 'суд' in record_rkn:
+        elif ';�����������;' in record_rkn:  # Росмолодежь
             self.temporary_blocking.update({true_domain: 'Временная'})
 
     def domain_check(self, domain):
@@ -96,7 +88,10 @@ class Rkn_check:
         new_domain3 = '*.' + str(domain)
         try:
             if self.rkn_dict[domain]:
-                self._status_check(domain_name=domain, true_domain=domain)
+                if domain == 'youtube.com':
+                    self.result_dict.update({domain: 'Нету в базе'})
+                else:
+                    self._status_check(domain_name=domain, true_domain=domain)
         except KeyError:
             try:
                 if self.rkn_dict[new_domain2]:
@@ -144,23 +139,20 @@ class Rkn_check:
 
 
 base_rkn = [
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-00.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-01.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-02.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-03.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-04.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-05.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-06.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-07.csv',
-    'https://sourceforge.net/p/z-i/code-0/HEAD/tree/dump-08.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-00.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-01.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-02.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-03.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-04.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-05.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-06.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-07.csv',
+    'https://raw.githubusercontent.com/zapret-info/z-i/master/dump-08.csv',
 ]
 
 if __name__ == '__main__':
     start_time = time.time()
     with open(file='rkn_base.txt', mode='w', encoding='utf-8'):
-        # print('-------------------------------------------')
-        # print('---> Важно! имеется погрешность в 0.00175%!')
-        # print('-------------------------------------------')
         print('---> Скачивание базы данных РКН...')
     threads_domains = []
     for urls in base_rkn:
@@ -189,3 +181,7 @@ if __name__ == '__main__':
     rkn.write_to_file()
     os.remove('rkn_base.txt')
     print(f'---> Готово! Результат смотри в файле output.txt !')
+    input('\nДля выхода из программы нажмите ENTER')
+
+
+
